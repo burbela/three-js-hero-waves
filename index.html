@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hero Waves - Three.js Demo</title>
+    <meta name="description" content="Full-screen hero with animated three.js sine waves and demo content.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css">
+  </head>
+  <body>
+    <header class="hero" id="hero">
+      <canvas id="hero-canvas" aria-hidden="true"></canvas>
+      <div class="hero__overlay" role="presentation"></div>
+      <div class="hero__content" role="banner">
+        <img class="hero__logo" src="assets/images/Tradoo_Logo_blau.svg" alt="Tradoo Finance" />
+        <h1 class="hero__title">Beautiful Sine Waves</h1>
+        <p class="hero__subtitle">Three.js animated background for modern hero sections</p>
+        <div class="hero__actions">
+          <a class="button button--primary" href="#demo">Explore Demo</a>
+          <a class="button button--ghost" href="https://tradoo.finance/" target="_blank" rel="noreferrer noopener">Tradoo Finance</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="demo" class="content">
+      <section class="section">
+        <div class="container">
+          <h2>What is this?</h2>
+          <p>
+            This page demonstrates a full-screen hero with a real-time, shader-based sine wave animation rendered using Three.js.
+            The canvas is fully responsive, high-DPI aware, and runs efficiently with requestAnimationFrame.
+          </p>
+        </div>
+      </section>
+
+      <section class="section section--alt">
+        <div class="container grid-3">
+          <div class="card">
+            <h3>Smooth Animation</h3>
+            <p>GPU-accelerated vertex displacement using custom shaders for fluid motion.</p>
+          </div>
+          <div class="card">
+            <h3>Responsive</h3>
+            <p>Automatically resizes to fit the viewport and device pixel ratio.</p>
+          </div>
+          <div class="card">
+            <h3>Accessible</h3>
+            <p>Overlay content remains readable with color contrast and reduced motion support.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <h2>Get Started</h2>
+          <ol class="steps">
+            <li>Use the hero as a background for your landing page.</li>
+            <li>Adjust colors, speeds, and amplitudes in the shader uniforms.</li>
+            <li>Add your own content above the animated canvas.</li>
+          </ol>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <span>© <span id="year"></span> Hero Waves Demo</span>
+      </div>
+    </footer>
+
+    <!-- Three.js from CDN -->
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    <!-- Optional: controls for future experiments -->
+    <!-- <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script> -->
+    <script src="assets/js/hero-waves.js"></script>
+    <script>
+      document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+  </body>
+  </html>
+
+
