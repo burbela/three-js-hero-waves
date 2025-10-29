@@ -36,43 +36,7 @@ assets/
 - Hero content and buttons in \`index.html\`
 - Styles in \`assets/css/styles.css\`
 
-## Run locally
-- Double-click \`index.html\`, or serve with a simple HTTP server.
-
-Example (Node):
-
-
-npx http-server . -p 5173 -c-1
-
-
-
-## Deploy
-Static hosting (GitHub Pages, Vercel, Netlify, etc.) — no server required.
-
-## Git
-Initial setup (SSH):
-
-
-# Generate SSH key (if needed)
-ssh-keygen -t ed25519 -C "you@example.com"
-
-# Start agent and add key
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519
-
-# Add public key to GitHub → Settings → SSH and GPG keys
-cat ~/.ssh/id_ed25519.pub
-
-# Push
-git add -A
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin git@github.com:burbela/three-js-hero-waves.git
-git push -u origin main
-
-
-
-If SSH is inconvenient, use HTTPS with a Personal Access Token.
+ 
 
 ## License
 MIT
