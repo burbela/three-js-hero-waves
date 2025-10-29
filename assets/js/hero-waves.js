@@ -31,9 +31,11 @@
     uFog: { value: new THREE.Color(0x0a0c10) }
   };
 
-  const material = new THREE.ShaderMaterial({
-    uniforms,
-    vertexShader: /* glsl */`
+  function createMaterial(layerUniforms) {
+    const u = Object.assign({}, uniforms, layerUniforms);
+    return new THREE.ShaderMaterial({
+      uniforms: u,
+      vertexShader: /* glsl */`
       varying vec2 vUv;
       uniform float uTime;
       uniform float uAmp;
@@ -62,11 +64,12 @@
         gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
       }
     `,
-    fragmentShader: /* glsl */`
+      fragmentShader: /* glsl */`
       varying vec2 vUv;
       uniform vec3 uColorA;
       uniform vec3 uColorB;
       uniform vec3 uFog;
+      uniform float uOpacity;
 
       void main() {
         // Soft gradient blend with slight vignette
@@ -76,17 +79,24 @@
         float vignette = smoothstep(1.2, 0.2, distance(vUv, vec2(0.5)));
         col *= mix(0.85, 1.0, vignette);
 
+        float alpha = uOpacity;
+
         // Gentle fog to blend with background
-        col = mix(uFog, col, 0.85);
-        gl_FragColor = vec4(col, 1.0);
+        col = mix(uFog, col, 0.80);
+        gl_FragColor = vec4(col, alpha);
       }
     `,
-    wireframe: false,
-    transparent: true,
-    depthWrite: false
-  });
+      wireframe: false,
+      transparent: true,
+      depthWrite: false,
+      depthTest: true,
+      blending: THREE.NormalBlending
+    });
+  }
 
-  let mesh = null;
+  const layers = [];
+  const wavesGroup = new THREE.Group();
+  scene.add(wavesGroup);
 
   function computeSegments() {
     // Base segment density relative to viewport, clamped for performance
@@ -101,15 +111,35 @@
   function buildMesh() {
     const { segX, segY } = computeSegments();
     if (geometry) geometry.dispose();
-    geometry = new THREE.PlaneGeometry(8, 5, segX, segY);
+    geometry = new THREE.PlaneGeometry(16, 10, segX, segY);
 
-    if (!mesh) {
-      mesh = new THREE.Mesh(geometry, material);
-      mesh.rotation.x = -0.9; // tilt towards the camera
-      mesh.position.y = -0.25; // lower slightly to create horizon line
-      scene.add(mesh);
+    if (layers.length === 0) {
+      // Create multiple wave layers with different speeds/colors
+      const palette = [
+        { a: 0x6ee7ff, b: 0xa78bfa, opacity: 0.65, amp: 0.20, freq: 1.5, speed: 0.65, y: -0.60, tilt: -0.88, z: 0.0 },
+        { a: 0x99f6e4, b: 0x93c5fd, opacity: 0.50, amp: 0.16, freq: 1.1, speed: 0.52, y: -0.70, tilt: -0.92, z: -0.15 },
+        { a: 0xf5d0fe, b: 0xbae6fd, opacity: 0.42, amp: 0.12, freq: 0.9, speed: 0.40, y: -0.80, tilt: -0.96, z: -0.30 }
+      ];
+
+      palette.forEach((cfg) => {
+        const mat = createMaterial({
+          uAmp: { value: cfg.amp },
+          uFreq: { value: cfg.freq },
+          uSpeed: { value: cfg.speed },
+          uColorA: { value: new THREE.Color(cfg.a) },
+          uColorB: { value: new THREE.Color(cfg.b) },
+          uOpacity: { value: cfg.opacity }
+        });
+        const m = new THREE.Mesh(geometry, mat);
+        m.rotation.x = cfg.tilt;
+        m.position.y = cfg.y;
+        m.position.z = cfg.z;
+        wavesGroup.add(m);
+        layers.push(m);
+      });
     } else {
-      mesh.geometry = geometry;
+      // Reassign updated geometry to all layers
+      layers.forEach((m) => { m.geometry = geometry; });
     }
   }
 
@@ -127,6 +157,13 @@
     camera.updateProjectionMatrix();
     // Rebuild geometry if segment targets changed significantly
     buildMesh();
+    // Update aspect uniform on all layers for mask correctness
+    const aspect = w / h;
+    layers.forEach((m) => {
+      if (m.material && m.material.uniforms && m.material.uniforms.uAspect) {
+        m.material.uniforms.uAspect.value = aspect;
+      }
+    });
   }
 
   const ro = new ResizeObserver(resize);
