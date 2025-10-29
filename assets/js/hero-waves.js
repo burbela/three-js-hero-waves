@@ -15,23 +15,26 @@
     dirs: [
       new THREE.Vector2(1.0, 0.2),
       new THREE.Vector2(0.6, 1.0),
-      new THREE.Vector2(0.3, -1.0)
+      new THREE.Vector2(0.3, -1.0),
+      new THREE.Vector2(-1.0, -0.3),
+      new THREE.Vector2(0.7, 1.0),
+      new THREE.Vector2(-0.2, 0.9)
     ],
     // Base amplitudes per wave (scaled by gradient below)
-    amps: [0.008, 0.04, 0.055],
+    amps: [0.008, 0.04, 0.055, 0.03, 0.02, 0.015],
     // Wavelength per wave (bigger = wider/smoother)
-    lens: [6.8, 2.3, 3.0],
+    lens: [6.8, 2.3, 3.0, 4.5, 7.0, 9.0],
     // Speed per wave (visual speed)
-    speeds: [0.90, 0.76, 0.64],
+    speeds: [0.90, 0.76, 0.64, 0.52, 0.44, 0.36],
     // Horizontal steepness (0..1). Lower = smoother crests
     steep: 0.0001,
     // Amplitude gradient bottom→top (multiplier)
     ampBottom: 0.5,
     ampTop: 3.0,
-    // Layer visuals
+    // Layer visuals (no fog)
     layers: {
-      clear: { opacity: 0.95, fogMix: 0.85, y: -0.82 },
-      foggy: { opacity: 0.35, fogMix: 0.65, y: -0.86 }
+      clear: { opacity: 1.0, y: -0.82, gamma: 0.75, foam: 0.25, colorA: 0x9be9ff, colorB: 0x7c3aed },
+      foggy: { opacity: 0.40, y: -0.86, gamma: 0.80, foam: 0.15, colorA: 0x67e8f9, colorB: 0x60a5fa }
     }
   };
   const canvas = document.getElementById('hero-canvas');
@@ -64,24 +67,28 @@
       uDir1: { value: WATER_CONFIG.dirs[0].clone() },
       uDir2: { value: WATER_CONFIG.dirs[1].clone() },
       uDir3: { value: WATER_CONFIG.dirs[2].clone() },
+      uDir4: { value: WATER_CONFIG.dirs[3].clone() },
+      uDir5: { value: WATER_CONFIG.dirs[4].clone() },
+      uDir6: { value: WATER_CONFIG.dirs[5].clone() },
       
       // wavelengths/amps tuned for multiple crests
       uAmp1: { value: WATER_CONFIG.amps[0] }, uLen1: { value: WATER_CONFIG.lens[0] }, uSpeed1: { value: WATER_CONFIG.speeds[0] },
       uAmp2: { value: WATER_CONFIG.amps[1] }, uLen2: { value: WATER_CONFIG.lens[1] }, uSpeed2: { value: WATER_CONFIG.speeds[1] },
       uAmp3: { value: WATER_CONFIG.amps[2] }, uLen3: { value: WATER_CONFIG.lens[2] }, uSpeed3: { value: WATER_CONFIG.speeds[2] },
+      uAmp4: { value: WATER_CONFIG.amps[3] }, uLen4: { value: WATER_CONFIG.lens[3] }, uSpeed4: { value: WATER_CONFIG.speeds[3] },
+      uAmp5: { value: WATER_CONFIG.amps[4] }, uLen5: { value: WATER_CONFIG.lens[4] }, uSpeed5: { value: WATER_CONFIG.speeds[4] },
+      uAmp6: { value: WATER_CONFIG.amps[5] }, uLen6: { value: WATER_CONFIG.lens[5] }, uSpeed6: { value: WATER_CONFIG.speeds[5] },
       
       uSteep: { value: WATER_CONFIG.steep },
       // Amplitude gradient from bottom (uv.y=0.0) to top (uv.y=1.0)
-      uAmpBottom: { value: 0.5 },
-      uAmpTop: { value: 3.0 },
-      // Colors and tones
-      uColorA: { value: new THREE.Color(0x6ee7ff) },
-      uColorB: { value: new THREE.Color(0xa78bfa) },
-      uFog: { value: new THREE.Color(0x0a0c10) },
+      // Colors and tones (allow per-layer override)
+      uColorA: { value: new THREE.Color(options.colorA ?? 0x6ee7ff) },
+      uColorB: { value: new THREE.Color(options.colorB ?? 0xa78bfa) },
       uOpacity: { value: options.opacity },
-      uFogMix: { value: options.fogMix },
       uAmpBottom: { value: WATER_CONFIG.ampBottom },
-      uAmpTop: { value: WATER_CONFIG.ampTop }
+      uAmpTop: { value: WATER_CONFIG.ampTop },
+      uGamma: { value: options.gamma ?? 1.0 },
+      uFoamAmount: { value: options.foam ?? 0.0 }
     };
     return new THREE.ShaderMaterial({
       uniforms,
@@ -92,6 +99,9 @@
       uniform vec2 uDir1; uniform float uAmp1; uniform float uLen1; uniform float uSpeed1;
       uniform vec2 uDir2; uniform float uAmp2; uniform float uLen2; uniform float uSpeed2;
       uniform vec2 uDir3; uniform float uAmp3; uniform float uLen3; uniform float uSpeed3;
+      uniform vec2 uDir4; uniform float uAmp4; uniform float uLen4; uniform float uSpeed4;
+      uniform vec2 uDir5; uniform float uAmp5; uniform float uLen5; uniform float uSpeed5;
+      uniform vec2 uDir6; uniform float uAmp6; uniform float uLen6; uniform float uSpeed6;
       
       uniform float uSteep;
       uniform float uAmpBottom;
@@ -119,6 +129,9 @@
         p = gerstner(uDir1, uAmp1, uLen1, uSpeed1, p, uTime);
         p = gerstner(uDir2, uAmp2, uLen2, uSpeed2, p, uTime);
         p = gerstner(uDir3, uAmp3, uLen3, uSpeed3, p, uTime);
+        p = gerstner(uDir4, uAmp4, uLen4, uSpeed4, p, uTime);
+        p = gerstner(uDir5, uAmp5, uLen5, uSpeed5, p, uTime);
+        p = gerstner(uDir6, uAmp6, uLen6, uSpeed6, p, uTime);
         
         vHeight = p.z;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
@@ -129,16 +142,19 @@
       varying float vHeight;
       uniform vec3 uColorA;
       uniform vec3 uColorB;
-      uniform vec3 uFog;
       uniform float uOpacity;
-      uniform float uFogMix;
+      uniform float uGamma;
+      uniform float uFoamAmount;
 
       void main(){
         float h = clamp(vHeight * 0.8 + 0.5, 0.0, 1.0);
+        h = pow(h, uGamma);
         vec3 col = mix(uColorB, uColorA, h);
-        float vignette = smoothstep(1.15, 0.25, distance(vUv, vec2(0.5)));
-        col *= mix(0.85, 1.0, vignette);
-        col = mix(uFog, col, uFogMix);
+        // very light vignette to keep edges crisp
+        float vignette = smoothstep(1.10, 0.35, distance(vUv, vec2(0.5)));
+        col *= mix(0.95, 1.0, vignette);
+        float foam = smoothstep(0.15, 0.35, abs(dFdx(vHeight)) + abs(dFdy(vHeight)));
+        col = mix(col, vec3(1.0), foam * uFoamAmount);
         gl_FragColor = vec4(col, uOpacity);
       }
     `,
