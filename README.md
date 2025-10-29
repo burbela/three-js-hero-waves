@@ -23,9 +23,9 @@ assets/
   css/styles.css
   js/hero-waves.js
   images/
-    Tradoo_Logo_blau.svg
-    Tradoo_Schriftlogo_blau.svg
-    Tradoo_Bildlogo_blau.svg
+    logo.svg
+    wordmark.svg
+    mark.svg
 
 
 
